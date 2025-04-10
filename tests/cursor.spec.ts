@@ -73,7 +73,7 @@ test('fill and submit DemoQA practice form', async ({ page }) => {
   // await expect(modal.locator('td:has-text("Date of Birth") + td')).toHaveText(...); // Add formatted date check
   await expect(modal.locator('td:has-text("Subjects") + td')).toHaveText(testData.subjects.join(', '));
   await expect(modal.locator('td:has-text("Hobbies") + td')).toHaveText(testData.hobbies.join(', '));
-  // await expect(modal.locator('td:has-text("Address") + td')).toHaveText("olaboga! Papieża obrażajo!"); // Keep incorrect assertion for now
+  await expect(modal.locator('td:has-text("Address") + td')).toHaveText(testData.address); // Original assertion
   await expect(modal.locator('td:has-text("State and City") + td')).toHaveText(`${testData.state} ${testData.city}`);
 
   // Close the modal (optional)
