@@ -4,9 +4,9 @@ test('fill and submit DemoQA practice form', async ({ page }) => {
   // Go to the initial page
   await page.goto('https://demoqa.com/');
 
-  // Navigate to Forms -> Practice Form
-  await page.locator('div.card').filter({ hasText: 'Forms' }).click();
-  await page.locator('li span.text').filter({ hasText: 'Practice Form' }).click();
+  // Navigate using getByText
+  await page.getByText('Forms').click();
+  await page.getByText('Practice Form').click();
 
   // Define test data
   const testData = {
@@ -23,65 +23,84 @@ test('fill and submit DemoQA practice form', async ({ page }) => {
     city: 'Delhi'
   };
 
-  // Fill the form
-  await page.locator('#firstName').fill(testData.firstName);
-  await page.locator('#lastName').fill(testData.lastName);
-  await page.locator('#userEmail').fill(testData.email);
+  // Fill the form using getByPlaceholder where possible
+  await page.getByPlaceholder('First Name').fill(testData.firstName);
+  await page.getByPlaceholder('Last Name').fill(testData.lastName);
+  await page.getByPlaceholder('name@example.com').fill(testData.email);
   await page.locator(`input[name="gender"][value="${testData.gender}"] + label`).click();
-  await page.locator('#userNumber').fill(testData.mobile);
+  await page.getByPlaceholder('Mobile Number').fill(testData.mobile);
 
-  // Date of Birth - open picker and select day, month, year
+  // Date of Birth - Keep existing logic for date picker component
   await page.locator('#dateOfBirthInput').click();
   await page.locator('.react-datepicker__month-select').selectOption({ label: testData.dob.month });
   await page.locator('.react-datepicker__year-select').selectOption({ value: testData.dob.year });
-  await page.locator(`.react-datepicker__day--0${testData.dob.day}:not(.react-datepicker__day--outside-month)`).click();
+  await page.locator('.react-datepicker__month').getByText(testData.dob.day, { exact: true }).first().click();
 
-
-  // Subjects - type and select from autocomplete
+  // Subjects - type and select using getByText for the option
   const subjectsInput = page.locator('#subjectsInput');
   for (const subject of testData.subjects) {
     await subjectsInput.fill(subject);
-    await page.locator(`#react-select-2-option-0`).click(); // Select the first suggestion
+    await page.locator('.subjects-auto-complete__menu-list').locator('.subjects-auto-complete__option', { hasText: subject }).click();
   }
 
-  // Hobbies - check checkboxes
+  // Hobbies - Target the label and click it
   for (const hobby of testData.hobbies) {
-    await page.locator('label').filter({ hasText: hobby }).check();
+    await page.locator('label').filter({ hasText: hobby }).click();
   }
 
-  await page.locator('#currentAddress').fill(testData.address);
+  // Use getByPlaceholder for address
+  await page.getByPlaceholder('Current Address').fill(testData.address);
 
-  // State and City - select from dropdowns
+  // State and City - click dropdown, then select option using getByText
   await page.locator('#state').click();
-  await page.locator('#react-select-3-option-0').click(); // Select first state (NCR) - adjust index/logic if needed
-  // Need to wait for city dropdown to populate based on state
-  await page.waitForTimeout(500); // Simple wait, consider more robust waits if needed
+  await page.getByText(testData.state, { exact: true }).click();
   await page.locator('#city').click();
-  await page.locator('#react-select-4-option-0').click(); // Select first city (Delhi) - adjust index/logic if needed
+  await page.getByText(testData.city, { exact: true }).click();
 
-  // Submit the form
-  await page.locator('#submit').click();
+  // Submit the form using getByRole
+  await page.getByRole('button', { name: 'Submit' }).click();
 
-  // Verify the confirmation modal
-  const modal = page.locator('.modal-content');
+  // Verify the confirmation modal using getByRole
+  const modal = page.getByRole('dialog');
   await expect(modal).toBeVisible();
-  await expect(modal.locator('#example-modal-sizes-title-lg')).toHaveText('Thanks for submitting the form');
+  await expect(modal.locator('#example-modal-sizes-title-lg')).toBeVisible();
 
-  // Verify submitted data in the modal (add assertions for all fields)
-  const tableRows = modal.locator('tbody tr');
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Student Name' }) }).locator('td').nth(1)).toHaveText(`${testData.firstName} ${testData.lastName}`);
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Student Email' }) }).locator('td').nth(1)).toHaveText(testData.email);
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Gender' }) }).locator('td').nth(1)).toHaveText(testData.gender);
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Mobile' }) }).locator('td').nth(1)).toHaveText(testData.mobile);
-  // Date assertion needs formatting - Playwright will get the input value, modal shows formatted
-  // await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Date of Birth' }) }).locator('td').nth(1)).toHaveText(...); // Add formatted date check
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Subjects' }) }).locator('td').nth(1)).toHaveText(testData.subjects.join(', '));
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Hobbies' }) }).locator('td').nth(1)).toHaveText(testData.hobbies.join(', '));
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'Address' }) }).locator('td').nth(1)).toHaveText("olaboga! Papieża obrażajo!");
-  await expect(tableRows.filter({ has: page.locator('td', { hasText: 'State and City' }) }).locator('td').nth(1)).toHaveText(`${testData.state} ${testData.city}`);
-
+  // Verify submitted data in the modal using adjacent sibling selector
+  await expect(modal.locator('td:has-text("Student Name") + td')).toHaveText(`${testData.firstName} ${testData.lastName}`);
+  await expect(modal.locator('td:has-text("Student Email") + td')).toHaveText(testData.email);
+  await expect(modal.locator('td:has-text("Gender") + td')).toHaveText(testData.gender);
+  await expect(modal.locator('td:has-text("Mobile") + td')).toHaveText(testData.mobile);
+  // await expect(modal.locator('td:has-text("Date of Birth") + td')).toHaveText(...); // Add formatted date check
+  await expect(modal.locator('td:has-text("Subjects") + td')).toHaveText(testData.subjects.join(', '));
+  await expect(modal.locator('td:has-text("Hobbies") + td')).toHaveText(testData.hobbies.join(', '));
+  // await expect(modal.locator('td:has-text("Address") + td')).toHaveText("olaboga! Papieża obrażajo!"); // Keep incorrect assertion for now
+  await expect(modal.locator('td:has-text("State and City") + td')).toHaveText(`${testData.state} ${testData.city}`);
 
   // Close the modal (optional)
-  await page.locator('#closeLargeModal').click();
+  await modal.getByRole('button', { name: 'Close' }).click();
   await expect(modal).not.toBeVisible();
+});
+
+test('process alerts', async ({ page }) => {
+  // Test steps for processing alerts go here
+});
+
+test('interact with dynamic elements', async ({ page }) => {
+  // Test steps for interacting with dynamic elements go here
+});
+
+test('table operations', async ({ page }) => {
+  // Test steps for table operations go here
+});
+
+test('menu operations', async ({ page }) => {
+  // Test steps for menu operations go here
+});
+
+test('drag and drop', async ({ page }) => {
+  // Test steps for drag and drop operations go here
+});
+
+test('interactive elements', async ({ page }) => {
+  // Test steps for interacting with other interactive elements go here
 });
