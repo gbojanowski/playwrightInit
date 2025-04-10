@@ -85,6 +85,54 @@ test.describe('Alert Handling', () => {
   });
 });
 
+test.describe('Alert Interaction', () => {
+  test('should handle alert interactions', async ({ page }) => {
+    await page.goto('https://demoqa.com/');
+    await page.locator('div').filter({ hasText: /^Alerts, Frame & Windows$/ }).nth(2).click();
+    await page.getByText('Alerts', { exact: true }).click();
+    page.once('dialog', dialog => {
+      console.log(`Dialog message: ${dialog.message()}`);
+      dialog.dismiss().catch(() => {});
+    });
+    await page.locator('#alertButton').click();
+    console.log("Alert button clicked");
+
+    //5sec delay
+    page.once('dialog', dialog => {
+      console.log(`Dialog message: ${dialog.message()}`);
+      dialog.dismiss().catch(() => {});
+    });
+    await page.locator('#timerAlertButton').click();
+    await page.waitForEvent('dialog');
+
+    //choose button to click
+    page.once('dialog', dialog => {
+      console.log(`Dialog message: ${dialog.message()}`);
+      dialog.dismiss().catch(() => {}); // Click 'Cancel' (anuluj) instead of 'OK'
+    });
+    await page.locator('#confirmButton').click();
+
+    //Prompted dialog
+    page.once('dialog', dialog => {
+      console.log(`Dialog message: ${dialog.message()}`);
+      dialog.accept('Test Prompt Input').catch(() => {});
+    });
+    await page.locator('#promtButton').click();
+    
+  });
+});
+
+test.describe('Frames Interactions', () => {
+  test('should interact with frames', async ({ page }) => {
+    await page.goto('https://demoqa.com/frames');
+    const frame = await page.locator('#frame1').contentFrame();
+    await frame?.getByRole('heading', { name: 'This is a sample page' }).evaluate((element) => {
+      element.textContent = 'TEST';
+    });
+
+  });
+});
+
 test.describe('Dynamic Elements Interaction', () => {
   test('should interact with dynamic elements', async ({ page }) => {
     // Add test steps for interacting with dynamic elements
