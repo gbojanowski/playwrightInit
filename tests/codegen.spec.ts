@@ -13,42 +13,40 @@ test.describe('User Registration', () => {
     const city = 'Noida';
 
     await page.goto('https://demoqa.com/');
-    await page.getByRole('heading', { name: 'Forms' }).click();
-    await page.getByText('Practice Form').click();
-    await page.getByRole('textbox', { name: 'First Name' }).click();
-    await page.getByRole('textbox', { name: 'First Name' }).fill(firstName);
-    await page.getByRole('textbox', { name: 'First Name' }).press('Tab');
-    await page.getByRole('textbox', { name: 'Last Name' }).fill(lastName);
-    await page.getByRole('textbox', { name: 'Last Name' }).press('Tab');
-    await page.getByRole('textbox', { name: 'name@example.com' }).fill(email);
-    await page.getByRole('textbox', { name: 'name@example.com' }).press('Tab');
-    await page.getByText(gender, { exact: true }).click();
-    await page.getByRole('textbox', { name: 'Mobile Number' }).click();
-    await page.getByRole('textbox', { name: 'Mobile Number' }).fill(mobileNumber);
-    await page.getByRole('textbox', { name: 'Mobile Number' }).press('Tab');
-    await page.locator('#dateOfBirthInput').press('Tab');
+    await page.getByText('Forms', { exact: true }).click();
+    await page.getByText('Practice Form', { exact: true }).click();
+    await page.locator('#firstName').fill(firstName);
+    await page.locator('#lastName').fill(lastName);
+    await page.locator('#userEmail').fill(email);
+    await page.locator(`input[name="gender"][value="${gender}"]`).check();
+    await page.locator('#userNumber').fill(mobileNumber);
+    await page.locator('#dateOfBirthInput').click();
+    await page.locator('.react-datepicker__month-select').selectOption('0');
+    await page.locator('.react-datepicker__year-select').selectOption('2007');
+    await page.locator('.react-datepicker__day--005').click();
     await page.locator('.subjects-auto-complete__value-container').click();
     await page.locator('#subjectsInput').fill(subject);
-    await page.getByText(hobbies).click();
-    // await page.getByRole('textbox', { name: 'Select picture' }).click();
-    //await page.getByRole('textbox', { name: 'Select picture' }).setInputFiles('Zrzut ekranu 2024-11-21 124028.png');
-    //DOES NOT CHOOSE A FILE FROM LOCAL MACHINE 
-    await page.locator('div').filter({ hasText: /^Select State$/ }).nth(3).click();
+    await page.locator('#subjectsInput').press('Enter');
+    await page.locator(`label[for="hobbies-checkbox-1"]`).click();
+    const filePath = 'C:\\Users\\gbojanowski\\Desktop\\Private\\AktorCzolo.jpg';
+    await page.locator('#uploadPicture').setInputFiles(filePath);
+    await page.locator('#state').click();
     await page.getByText(state, { exact: true }).click();
-    await page.getByText('Select City').click();
+    await page.locator('#city').click();
     await page.getByText(city, { exact: true }).click();
-    await page.getByRole('textbox', { name: 'Current Address' }).click();
-    await page.getByRole('textbox', { name: 'Current Address' }).fill(currentAddress);
-    await page.getByRole('button', { name: 'Submit' }).click();
+    await page.locator('#currentAddress').fill(currentAddress);
+    await page.locator('#submit').click();
 
-    await expect(page.getByRole('cell', { name: gender })).toBeVisible();
-    await expect(page.getByRole('cell', { name: email })).toBeVisible();
-    await expect(page.getByRole('cell', { name: `${firstName} ${lastName}` })).toBeVisible();
-    await expect(page.getByRole('cell', { name: hobbies })).toBeVisible();
-    await expect(page.getByRole('cell', { name: state + ' ' + city })).toBeVisible();
-    await expect(page.locator('div').filter({ hasText: 'Thanks for submitting the form' }).nth(3)).toBeVisible();
+    await expect(page.locator('td')).toContainText(gender);
+    await expect(page.locator('td')).toContainText(email);
+    await expect(page.locator('td')).toContainText(`${firstName} ${lastName}`);
+    await expect(page.locator('td')).toContainText(hobbies);
+    await expect(page.locator('td')).toContainText(`${state} ${city}`);
+    await expect(page.locator('.modal-content')).toContainText('Thanks for submitting the form');
   });
 });
+
+
 
 
 
@@ -60,6 +58,7 @@ test.describe('User Login', () => {
 
 test.describe('Alert Handling', () => {
   //codegen: DOES NOT operate on alert popups. Does not wait for them, does not interact with them. They are not recorded.
+  //however it is possible to handle them using copilot.
   test('should process alerts correctly', async ({ page }) => {
   await page.goto('https://demoqa.com/alerts');
   page.once('dialog', dialog => {
